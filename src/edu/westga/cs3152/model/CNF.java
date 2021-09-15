@@ -22,11 +22,11 @@ public class CNF {
 	private int[][] valuesMatrix;
 	private int[][] clausesMatrix;
 	
-	private int [] clauseTruthStates;
 	private int [] valueTruthStates;
+	private int [] clauseTruthStates;
 	
-	private int falseClauses;
 	private int trueClauses;
+	private int falseClauses;
 	
 	private int totalTruthValue;
 	
@@ -136,9 +136,9 @@ public class CNF {
 	public int set(int var, int val) {
 		this.checkPreconditionsForSet(var, val);
 		this.valueTruthStates[var - 1] = val;
-		return this.updateSetTruthValue(var);
+		return this.updateTruthValues(var);
 	}
-
+	
 	private void checkPreconditionsForSet(int var, int val) {
 		if (var < 1) {
 			throw new IllegalArgumentException(CNFErrorMessages.CANNOT_SET_WHEN_VARAIBLE_IS_LESS_THAN_ONE);
@@ -160,10 +160,10 @@ public class CNF {
 		}
 	}
 	
-	private int updateSetTruthValue(int var) {
+	private int updateTruthValues(int var) {
 		for (int clause : this.valuesMatrix[var - 1]) {
 			int clauseTruthValue = this.setClauseTruthValue(clause);
-			this.setNumberOfTrueAndFalseValuesForSet(clause, clauseTruthValue);
+			this.setNumberOfTrueAndFalseValues(clause, clauseTruthValue);
 		}
 		
 		this.setOverallCNFTruthValue();
@@ -187,14 +187,20 @@ public class CNF {
 		return overallClauseTruthValue;
 	}
 	
-	private void setNumberOfTrueAndFalseValuesForSet(int clause, int overallClauseTruthValue) {
-		if (this.clauseTruthStates[Math.abs(clause) - 1] != 1 && overallClauseTruthValue == 1) {
+	private void setNumberOfTrueAndFalseValues(int clause, int overallClauseTruthValue) {
+		int truthStatesIndex = Math.abs(clause) - 1;
+		
+		if (this.clauseTruthStates[truthStatesIndex] != 1 && overallClauseTruthValue == 1) {
 			this.trueClauses++;
-		} else if (this.clauseTruthStates[Math.abs(clause) - 1] != -1 && overallClauseTruthValue == -1) {
+		} else if (this.clauseTruthStates[truthStatesIndex] != -1 && overallClauseTruthValue == -1) {
 			this.falseClauses++;
 		}
-		
-		this.clauseTruthStates[Math.abs(clause) - 1] = overallClauseTruthValue;
+		if (this.clauseTruthStates[truthStatesIndex] == 1 && overallClauseTruthValue != 1) {
+			this.trueClauses--;
+		} else if (this.clauseTruthStates[truthStatesIndex] == -1 && overallClauseTruthValue != -1) {
+			this.falseClauses--;
+		}		
+		this.clauseTruthStates[truthStatesIndex] = overallClauseTruthValue;
 	}
 	
 	private void setOverallCNFTruthValue() {
@@ -220,8 +226,7 @@ public class CNF {
 	public int unset(int var) {
 		this.checkPreconditionsForUnset(var);
 		this.valueTruthStates[var - 1] = 0;
-		this.updateUnsetTruthValue(var);
-		return this.totalTruthValue;
+		return this.updateTruthValues(var);
 	}
 
 	private void checkPreconditionsForUnset(int var) {
@@ -241,26 +246,4 @@ public class CNF {
 			throw new IllegalArgumentException(CNFErrorMessages.CANNOT_UNSET_WHEN_THE_VALUES_BEING_UNSET_IS_EQUAL_TO_ZERO);
 		}
 	}
-	
-	private int updateUnsetTruthValue(int var) {
-		for (int clause : this.valuesMatrix[var - 1]) {
-			int clauseTruthValue = this.setClauseTruthValue(clause);
-			this.setNumberOfTrueAndFalseValuesForUnset(clause, clauseTruthValue);
-		}
-		
-		this.setOverallCNFTruthValue();
-		return this.totalTruthValue;
-	}
-	
-	private void setNumberOfTrueAndFalseValuesForUnset(int clause, int overallClauseTruthValue) {
-		int clauseTruthStatesIndex = Math.abs(clause) - 1;
-		if (this.clauseTruthStates[clauseTruthStatesIndex] == 1 && overallClauseTruthValue != 1) {
-			this.trueClauses--;
-		} else if (this.clauseTruthStates[clauseTruthStatesIndex] == -1 && overallClauseTruthValue != -1) {
-			this.falseClauses--;
-		}
-		
-		this.clauseTruthStates[clauseTruthStatesIndex] = overallClauseTruthValue;
-	}
-	
 }

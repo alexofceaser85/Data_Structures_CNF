@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import edu.westga.cs3152.model.CNF;
 
 class TestConstructor {
-
+	
 	@Test
 	void testNullFileName() {
 		assertThrows(IllegalArgumentException.class, () -> new CNF(null));

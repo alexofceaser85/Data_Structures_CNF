@@ -82,6 +82,7 @@ class TestSet {
 				() -> assertEquals(0, formula.getValue()));
 		
 		assertEquals(0, formula.set(1, -1));
-		assertEquals(-1, formula.set(2, 1));
+		assertEquals(0, formula.set(2, 1));
+		assertEquals(1, formula.set(3, 1));
 	}
 }
