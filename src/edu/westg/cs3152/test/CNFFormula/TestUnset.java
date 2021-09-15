@@ -12,6 +12,12 @@ import edu.westga.cs3152.model.CNF;
 class TestUnset {
 
 	@Test
+	void shouldNotAllowVariableLessThanOne() {
+		CNF formula = new CNF("Input/small2.cnf");
+		assertThrows(IllegalArgumentException.class, () -> formula.unset(0));
+	}
+	
+	@Test
 	void testInvalidVariable() {
 		CNF formula = new CNF("Input/small2.cnf");
 		assertThrows(IllegalArgumentException.class, () -> formula.unset(4));

@@ -12,6 +12,24 @@ import edu.westga.cs3152.model.CNF;
 class TestSet {
 
 	@Test
+	void shouldNotAllowVariableLessThanOne() {
+		CNF formula = new CNF("Input/small2.cnf");
+		assertThrows(IllegalArgumentException.class, () -> formula.set(0, 1));
+	}
+	
+	@Test
+	void shouldNotAllowValueLessThanNegativeOne() {
+		CNF formula = new CNF("Input/small2.cnf");
+		assertThrows(IllegalArgumentException.class, () -> formula.set(2, -2));
+	}
+	
+	@Test
+	void shouldNotAllowValueMoreThanOne()  {
+		CNF formula = new CNF("Input/small2.cnf");
+		assertThrows(IllegalArgumentException.class, () -> formula.set(2, 2));
+	}
+	
+	@Test
 	void testInvalidVariable() {
 		CNF formula = new CNF("Input/small2.cnf");
 		assertThrows(IllegalArgumentException.class, () -> formula.set(4, 1));
@@ -55,5 +73,15 @@ class TestSet {
 	void testSetOneVarTrueFormula() {
 		CNF formula = new CNF("Input/small1.cnf");
 		assertEquals(1, formula.set(2, 1));
+	}
+	
+	@Test
+	void testAddingFalseToAllTrueCNF() {
+		CNF formula = new CNF("Input/all_true.cnf");
+		assertAll(() -> assertEquals(4, formula.numberVariables()), () -> assertEquals(3, formula.numberClauses()),
+				() -> assertEquals(0, formula.getValue()));
+		
+		assertEquals(0, formula.set(1, -1));
+		assertEquals(-1, formula.set(2, 1));
 	}
 }

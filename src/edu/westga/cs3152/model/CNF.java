@@ -1,5 +1,8 @@
 package edu.westga.cs3152.model;
 
+import edu.westga.cs3152.data.FileReader;
+import edu.westga.cs3152.errormessages.CNFErrorMessages;
+
 /**
  * Class CNF
  * 
@@ -13,6 +16,20 @@ package edu.westga.cs3152.model;
  */
 public class CNF {
 
+	private int numberOfVariables;
+	private int numberOfClauses;
+	
+	private int[][] valuesMatrix;
+	private int[][] clausesMatrix;
+	
+	private int [] clauseTruthStates;
+	private int [] valueTruthStates;
+	
+	private int falseClauses;
+	private int trueClauses;
+	
+	private int totalTruthValue;
+	
 	/**
 	 * Instantiates a new CNF object and sets it to the CNF formula specified in the
 	 * given file. The file conforms to the simplified DIMACS format: (Adapted from
@@ -42,6 +59,18 @@ public class CNF {
 	 *                                  format
 	 */
 	public CNF(String filename) {
+		FileReader reader = new FileReader(filename);
+		reader.readFromInputFile();
+		
+		this.numberOfClauses = reader.getFileData().getNumberOfClauses();
+		this.numberOfVariables = reader.getFileData().getNumberOfValues();
+		
+		this.clauseTruthStates = new int[this.numberOfClauses];
+		this.valueTruthStates = new int[this.numberOfVariables];
+		
+		this.clausesMatrix = reader.getFileData().getClauseMatrix();
+		this.valuesMatrix = reader.getFileData().getValueMatrix();
+		this.totalTruthValue = 0;
 	}
 
 	/**
@@ -52,7 +81,7 @@ public class CNF {
 	 * @return number variables
 	 */
 	public int numberVariables() {
-		return 0;
+		return this.numberOfVariables;
 	}
 
 	/**
@@ -63,7 +92,7 @@ public class CNF {
 	 * @return number clauses
 	 */
 	public int numberClauses() {
-		return 0;
+		return this.numberOfClauses;
 	}
 
 	/**
@@ -76,7 +105,7 @@ public class CNF {
 	 * @return the current value of this formula
 	 */
 	public int getValue() {
-		return 0;
+		return this.totalTruthValue;
 	}
 
 	/**
@@ -88,7 +117,7 @@ public class CNF {
 	 * @return the value of this variable
 	 */
 	public int getValue(int var) {
-		return 0;
+		return this.valueTruthStates[var - 1];
 	}
 
 	/**
@@ -105,7 +134,77 @@ public class CNF {
 	 * @throws IllegalArgumentException if the precondition is not met
 	 */
 	public int set(int var, int val) {
-		return 0;
+		this.checkPreconditionsForSet(var, val);
+		this.valueTruthStates[var - 1] = val;
+		return this.updateSetTruthValue(var);
+	}
+
+	private void checkPreconditionsForSet(int var, int val) {
+		if (var < 1) {
+			throw new IllegalArgumentException(CNFErrorMessages.CANNOT_SET_WHEN_VARAIBLE_IS_LESS_THAN_ONE);
+		}
+		if (var > this.numberOfVariables) {
+			throw new IllegalArgumentException(CNFErrorMessages.CANNOT_SET_WHEN_VARIABLE_IS_MORE_THAN_THE_NUMBER_OF_VARIABLES);
+		}
+		if (val < -1) {
+			throw new IllegalArgumentException(CNFErrorMessages.CANNOT_SET_WHEN_VALUE_IS_LESS_THAN_NEGATIVE_ONE);
+		}
+		if (val == 0) {
+			throw new IllegalArgumentException(CNFErrorMessages.CANNOT_SET_WHEN_VALUE_IS_EQUAL_TO_ZERO);
+		}
+		if (val > 1) {
+			throw new IllegalArgumentException(CNFErrorMessages.CANNOT_SET_WHEN_VALUE_IS_MORE_THAN_ONE);
+		}
+		if (this.getValue(var) != 0) {
+			throw new IllegalArgumentException(CNFErrorMessages.CANNOT_SET_WHEN_VARIABLE_IS_ALREADY_PRESENT_IN_CLAUSE);
+		}
+	}
+	
+	private int updateSetTruthValue(int var) {
+		for (int clause : this.valuesMatrix[var - 1]) {
+			int clauseTruthValue = this.setClauseTruthValue(clause);
+			this.setNumberOfTrueAndFalseValuesForSet(clause, clauseTruthValue);
+		}
+		
+		this.setOverallCNFTruthValue();
+		return this.totalTruthValue;
+	}
+	
+	private int setClauseTruthValue(int clause) {
+		int overallClauseTruthValue = 0;
+		
+		for (int clauseValue : this.clausesMatrix[Math.abs(clause) - 1]) {
+			int currentClauseTruthValue = this.valueTruthStates[Math.abs(clauseValue) - 1];
+
+			if (currentClauseTruthValue == 1 && clauseValue > 0 || currentClauseTruthValue == -1 && clauseValue < 0) {
+				overallClauseTruthValue = 1;
+				break;
+			} else if (currentClauseTruthValue != 0) {
+				overallClauseTruthValue = -1;
+			}
+		}
+		
+		return overallClauseTruthValue;
+	}
+	
+	private void setNumberOfTrueAndFalseValuesForSet(int clause, int overallClauseTruthValue) {
+		if (this.clauseTruthStates[Math.abs(clause) - 1] != 1 && overallClauseTruthValue == 1) {
+			this.trueClauses++;
+		} else if (this.clauseTruthStates[Math.abs(clause) - 1] != -1 && overallClauseTruthValue == -1) {
+			this.falseClauses++;
+		}
+		
+		this.clauseTruthStates[Math.abs(clause) - 1] = overallClauseTruthValue;
+	}
+	
+	private void setOverallCNFTruthValue() {
+		if (this.trueClauses == this.numberOfClauses) {
+			this.totalTruthValue = 1;
+		} else if (this.trueClauses + this.falseClauses == this.numberOfClauses) {
+			this.totalTruthValue = -1;
+		} else {
+			this.totalTruthValue = 0;
+		}
 	}
 
 	/**
@@ -119,6 +218,49 @@ public class CNF {
 	 * @throws IllegalArgumentException if the precondition is not met
 	 */
 	public int unset(int var) {
-		return 0;
+		this.checkPreconditionsForUnset(var);
+		this.valueTruthStates[var - 1] = 0;
+		this.updateUnsetTruthValue(var);
+		return this.totalTruthValue;
 	}
+
+	private void checkPreconditionsForUnset(int var) {
+		if (var < 1) {
+			throw new IllegalArgumentException(CNFErrorMessages.CANNOT_UNSET_WHEN_VARIABLE_IS_LESS_THAN_ONE);
+		}
+		if (var > this.numberOfVariables) {
+			throw new IllegalArgumentException(CNFErrorMessages.CANNOT_UNSET_WHEN_VARIABLE_IS_MORE_THAN_NUMBER_OF_VARIABLES);
+		}
+		if (this.getValue(var) > 1) {
+			throw new IllegalArgumentException(CNFErrorMessages.CANNOT_UNSET_WHEN_THE_VALUE_BEING_UNSET_IS_MORE_THAN_ONE);
+		}
+		if (this.getValue(var) < -1) {
+			throw new IllegalArgumentException(CNFErrorMessages.CANNOT_UNSET_WHEN_THE_VALUE_BEING_UNSET_IS_LESS_THAN_NEGATIVE_ONE);
+		}
+		if (this.getValue(var) == 0) {
+			throw new IllegalArgumentException(CNFErrorMessages.CANNOT_UNSET_WHEN_THE_VALUES_BEING_UNSET_IS_EQUAL_TO_ZERO);
+		}
+	}
+	
+	private int updateUnsetTruthValue(int var) {
+		for (int clause : this.valuesMatrix[var - 1]) {
+			int clauseTruthValue = this.setClauseTruthValue(clause);
+			this.setNumberOfTrueAndFalseValuesForUnset(clause, clauseTruthValue);
+		}
+		
+		this.setOverallCNFTruthValue();
+		return this.totalTruthValue;
+	}
+	
+	private void setNumberOfTrueAndFalseValuesForUnset(int clause, int overallClauseTruthValue) {
+		int clauseTruthStatesIndex = Math.abs(clause) - 1;
+		if (this.clauseTruthStates[clauseTruthStatesIndex] == 1 && overallClauseTruthValue != 1) {
+			this.trueClauses--;
+		} else if (this.clauseTruthStates[clauseTruthStatesIndex] == -1 && overallClauseTruthValue != -1) {
+			this.falseClauses--;
+		}
+		
+		this.clauseTruthStates[clauseTruthStatesIndex] = overallClauseTruthValue;
+	}
+	
 }
