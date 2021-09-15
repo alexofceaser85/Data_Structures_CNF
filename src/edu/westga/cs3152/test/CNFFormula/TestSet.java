@@ -1,4 +1,4 @@
-package edu.westg.cs3152.test.CNFFormula;
+package edu.westga.cs3152.test.CNFFormula;
 
 import static org.junit.jupiter.api.Assertions.*;
 
